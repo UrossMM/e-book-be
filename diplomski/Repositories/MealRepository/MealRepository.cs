@@ -450,14 +450,7 @@ namespace diplomski.Repositories.MealRepository
         public async Task<(StatusDto, List<MealDto>)> GetFilteredMeals(MealFilter mealFilter)
         {
             List<MealDto> meals = null;
-            IQueryable<Meal> querymeals;
-
-            if(string.IsNullOrWhiteSpace(mealFilter.TemplateName) == false)
-            {
-                querymeals = _dbContext.Meals.Where(x => x.TemplateName == mealFilter.TemplateName);
-            }
-            else
-                querymeals = _dbContext.Meals;
+            IQueryable<Meal> querymeals = _dbContext.Meals;
 
             if (mealFilter.CaloriesPlus)
                 meals = await querymeals.Where(x => x.Calories >= mealFilter.Calories).Select(x => new MealDto

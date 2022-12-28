@@ -156,13 +156,12 @@ namespace diplomski.Repositories.MealRepository
                     MealFilter filter = new MealFilter();
                     string concatedAdditions = String.Join(',', additions);
                     filter.Additions = concatedAdditions;
-                    filter.Calories = meal.Calories.GetValueOrDefault();                    
+                    // filter.Calories = meal.Calories.GetValueOrDefault();
+                    filter.Calories = 300;
                     if(goal == Goal.Fattening)
                         filter.CaloriesPlus = true;
                     else if(goal == Goal.WeightLoss)
                         filter.CaloriesPlus = false;
-                    else
-                        filter.CaloriesPlus = null;
 
                     var replacementMeal = await GetFilteredMeal(filter);
                     if(replacementMeal != null)
@@ -451,7 +450,7 @@ namespace diplomski.Repositories.MealRepository
 
         public async Task<(StatusDto, List<MealDto>)> GetFilteredMeals(MealFilter mealFilter)
         {
-            MealDto meal = null;
+            List<MealDto> meals = null;
             IQueryable<Meal> querymeals;
 
             if(string.IsNullOrWhiteSpace(mealFilter.TemplateName) == false)
@@ -542,7 +541,7 @@ namespace diplomski.Repositories.MealRepository
             else {
                 var minCalories = mealFilter.Calories * 0.2 - mealFilter.Calories;
                 var maxCalories = mealFilter.Calories * 0.2 + mealFilter.Calories;
-                meal = await querymeals.Where(x => x.Calories >= minCalories && x => x.Calories <= maxCalories).Select(x => new MealDto
+                meal = await querymeals.Where(x => x.Calories >= minCalories && x.Calories <= maxCalories).Select(x => new MealDto
                 {
                     Calories = x.Calories,
                     Mass = x.Mass,

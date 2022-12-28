@@ -156,8 +156,7 @@ namespace diplomski.Repositories.MealRepository
                     MealFilter filter = new MealFilter();
                     string concatedAdditions = String.Join(',', additions);
                     filter.Additions = concatedAdditions;
-                    // filter.Calories = meal.Calories.GetValueOrDefault();
-                    filter.Calories = 300;
+                    filter.Calories = meal.Calories.GetValueOrDefault();
                     if(goal == Goal.Fattening)
                         filter.CaloriesPlus = true;
                     else if(goal == Goal.WeightLoss)
@@ -539,8 +538,8 @@ namespace diplomski.Repositories.MealRepository
                 }).OrderByDescending(x => x.Calories)
                 .FirstOrDefaultAsync();
             else {
-                var minCalories = mealFilter.Calories * 0.2 - mealFilter.Calories;
-                var maxCalories = mealFilter.Calories * 0.2 + mealFilter.Calories;
+                var minCalories = mealFilter.Calories - mealFilter.Calories * 0.2;
+                var maxCalories = mealFilter.Calories + mealFilter.Calories * 0.2;
                 meal = await querymeals.Where(x => x.Calories >= minCalories && x.Calories <= maxCalories).Select(x => new MealDto
                 {
                     Calories = x.Calories,

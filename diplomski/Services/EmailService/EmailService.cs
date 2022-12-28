@@ -23,7 +23,7 @@ namespace diplomski.Services.EmailService
                 client.Host = "smtp.outlook.com";
                 client.UseDefaultCredentials = false;
                 //Update your email credentials here
-                client.Credentials = new System.Net.NetworkCredential(from, "Urosurosuros");
+                client.Credentials = new System.Net.NetworkCredential(from, "Ivanivanivan");
                 client.Port = 587;
                 client.EnableSsl = true;
                 client.Send(emailMessage);

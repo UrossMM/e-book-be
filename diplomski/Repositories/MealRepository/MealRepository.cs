@@ -142,7 +142,7 @@ namespace diplomski.Repositories.MealRepository
         //        return new StatusDto(StatusCodes.Status500InternalServerError, "Server error");
         //    }
         //}
-        private void FindInedibleIngredients(List<MealDto> meals, List<string> additions)
+        private async Task<List<MealDto>> FindInedibleIngredients(List<MealDto> meals, List<string> additions, Goal goal)
         {
             foreach (MealDto meal in meals)
             {
@@ -150,6 +150,26 @@ namespace diplomski.Repositories.MealRepository
 
                 List<string> InedibleIngredients = mealAdditions.Intersect(additions)
                     .ToList();
+
+                if(InedibleIngredients.Count > 0)
+                {
+                    MealFilter filter = new MealFilter();
+                    string concatedAdditions = String.Join(',', additions);
+                    filter.Additions = concatedAdditions;
+                    filter.Calories = meal.Calories.GetValueOrDefault();                    
+                    if(goal == Goal.Fattening)
+                        filter.CaloriesPlus = true;
+                    else
+                        filter.CaloriesPlus = false;
+
+                    var replacementMeal = await GetFilteredMeal(filter);
+                    if(replacementMeal != null)
+                    {
+                        mealAdditions = replacementMeal.Ingredient.Split(',').ToList();
+                        InedibleIngredients = mealAdditions.Intersect(additions).ToList();
+                    }
+                }
+
                 foreach (string inedibleIngredient in InedibleIngredients)
                 {
                     EatIngredient forCreate = new EatIngredient()
@@ -170,6 +190,8 @@ namespace diplomski.Repositories.MealRepository
                     meal.EatIngredients.Add(forCreate);
                 }
             }
+
+            return meals;
         }
         public async Task<(StatusDto, List<MealDto>)> GetPersonalizedMealsAsync(UserInputDataDto data)
         {
@@ -261,7 +283,7 @@ namespace diplomski.Repositories.MealRepository
                 })
                 .ToListAsync();
 
-                FindInedibleIngredients(result, data.Additions.Split(',').ToList());
+                result = await FindInedibleIngredients(result, data.Additions.Split(',').ToList(), data.Goal);
 
                 return (new StatusDto(), result);
             }
@@ -482,6 +504,48 @@ namespace diplomski.Repositories.MealRepository
                 result = meals;
 
             return (new StatusDto(), result);
+        }
+
+        private async Task<MealDto> GetFilteredMeal(MealFilter mealFilter)
+        {
+            MealDto meal = null;
+            IQueryable<Meal> querymeals;
+
+            if(string.IsNullOrWhiteSpace(mealFilter.TemplateName) == false)
+            {
+                querymeals = _dbContext.Meals.Where(x => x.TemplateName == mealFilter.TemplateName);
+            }
+            else
+                querymeals = _dbContext.Meals;
+
+            if (mealFilter.CaloriesPlus)
+                meal = await querymeals.Where(x => x.Calories >= mealFilter.Calories).Select(x => new MealDto
+                {
+                    Calories = x.Calories,
+                    Mass = x.Mass,
+                    Name = x.Name,
+                    Recipe = x.Recipe,
+                    Ingredient = x.Ingredient,
+                    Carbohydrates = x.Carbohydrates,
+                    Proteins=x.Proteins,
+                    Fats=x.Fats
+                }).OrderBy(x => x.Calories)
+                .FirstOrDefaultAsync();
+            else
+                meal = await querymeals.Where(x => x.Calories <= mealFilter.Calories).Select(x => new MealDto
+                {
+                    Calories = x.Calories,
+                    Mass = x.Mass,
+                    Name = x.Name,
+                    Recipe = x.Recipe,
+                    Ingredient = x.Ingredient,
+                    Carbohydrates = x.Carbohydrates,
+                    Proteins = x.Proteins,
+                    Fats = x.Fats
+                }).OrderByDescending(x => x.Calories)
+                .FirstOrDefaultAsync();
+
+            return meal;
         }
 
         public async Task<StatusDto> AddFoodstuff(FoodstuffDto foodstuffDto)

@@ -153,16 +153,12 @@ namespace diplomski.Repositories.MealRepository
 
                 if(InedibleIngredients.Count > 0)
                 {
-                    MealFilter filter = new MealFilter();
-                    string concatedAdditions = String.Join(',', additions);
-                    filter.Additions = concatedAdditions;
+                    MealAutoFilter filter = new MealAutoFilter();
+                    filter.Additions = additions;
                     filter.Calories = meal.Calories.GetValueOrDefault();
-                    if(goal == Goal.Fattening)
-                        filter.CaloriesPlus = true;
-                    else if(goal == Goal.WeightLoss)
-                        filter.CaloriesPlus = false;
+                    filter.Goal = goal; 
 
-                    var replacementMeal = await GetFilteredMeal(filter);
+                    var replacementMeal = await GetFilteredMealAutomatic(filter);
                     if(replacementMeal != null)
                     {
                         mealAdditions = replacementMeal.Ingredient.Split(',').ToList();
@@ -506,52 +502,53 @@ namespace diplomski.Repositories.MealRepository
             return (new StatusDto(), result);
         }
 
-        private async Task<MealDto> GetFilteredMeal(MealFilter mealFilter)
+        private async Task<MealDto> GetFilteredMealAutomatic(MealAutoFilter mealFilter)
         {
-            MealDto meal = null;
+            MealDto? meal = null;
+            List<Meal> filteredMealsByGoal = new List<Meal>();
             IQueryable<Meal> querymeals = _dbContext.Meals;
 
-            if (mealFilter.CaloriesPlus)
-                meal = await querymeals.Where(x => x.Calories >= mealFilter.Calories).Select(x => new MealDto
-                {
-                    Calories = x.Calories,
-                    Mass = x.Mass,
-                    Name = x.Name,
-                    Recipe = x.Recipe,
-                    Ingredient = x.Ingredient,
-                    Carbohydrates = x.Carbohydrates,
-                    Proteins=x.Proteins,
-                    Fats=x.Fats
-                }).OrderBy(x => x.Calories)
-                .FirstOrDefaultAsync();
-            else if(mealFilter.CaloriesPlus == false)
-                meal = await querymeals.Where(x => x.Calories <= mealFilter.Calories).Select(x => new MealDto
-                {
-                    Calories = x.Calories,
-                    Mass = x.Mass,
-                    Name = x.Name,
-                    Recipe = x.Recipe,
-                    Ingredient = x.Ingredient,
-                    Carbohydrates = x.Carbohydrates,
-                    Proteins = x.Proteins,
-                    Fats = x.Fats
-                }).OrderByDescending(x => x.Calories)
-                .FirstOrDefaultAsync();
+            if (mealFilter.Goal == Goal.Fattening)
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories >= mealFilter.Calories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+            
+            else if (mealFilter.Goal == Goal.WeightLoss)
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories <= mealFilter.Calories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+                
             else {
                 var minCalories = mealFilter.Calories - mealFilter.Calories * 0.2;
                 var maxCalories = mealFilter.Calories + mealFilter.Calories * 0.2;
-                meal = await querymeals.Where(x => x.Calories >= minCalories && x.Calories <= maxCalories).Select(x => new MealDto
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories >= minCalories && x.Calories <= maxCalories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+            }
+
+            foreach(Meal filteredMealByGoal in filteredMealsByGoal)
+            {
+                List<string> mealIngredients = filteredMealByGoal.Ingredient.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+                bool containsAdditionsFromFilter = mealIngredients.Any(x => mealFilter.Additions.Contains(x));
+
+                if (containsAdditionsFromFilter)
+                    continue;
+                else
                 {
-                    Calories = x.Calories,
-                    Mass = x.Mass,
-                    Name = x.Name,
-                    Recipe = x.Recipe,
-                    Ingredient = x.Ingredient,
-                    Carbohydrates = x.Carbohydrates,
-                    Proteins = x.Proteins,
-                    Fats = x.Fats
-                }).OrderByDescending(x => x.Calories)
-                .FirstOrDefaultAsync();
+                    meal = new MealDto()
+                    {
+                        Calories = filteredMealByGoal.Calories,
+                        Mass = filteredMealByGoal.Mass,
+                        Name = filteredMealByGoal.Name,
+                        Recipe = filteredMealByGoal.Recipe,
+                        Ingredient = filteredMealByGoal.Ingredient,
+                        Carbohydrates = filteredMealByGoal.Carbohydrates,
+                        Proteins = filteredMealByGoal.Proteins,
+                        Fats = filteredMealByGoal.Fats
+                    };
+
+                    return meal;
+                }
             }
 
             return meal;

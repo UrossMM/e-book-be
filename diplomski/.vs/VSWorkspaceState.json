@@ -3,7 +3,7 @@
     "",
     "\\Controllers",
     "\\Data",
-    "\\Data\\Models",
+    "\\Data\\Dtos",
     "\\Repositories",
     "\\Repositories\\MealRepository",
     "\\Services",
@@ -11,6 +11,6 @@
     "\\Services\\HtmlGenerator",
     "\\Services\\MealService"
   ],
-  "SelectedNode": "\\Repositories\\MealRepository\\MealRepository.cs",
+  "SelectedNode": "\\diplomski.csproj",
   "PreviewInSolutionExplorer": false
 }

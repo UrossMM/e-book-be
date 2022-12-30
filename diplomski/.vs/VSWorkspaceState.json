@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Controllers",
+    "\\Data",
+    "\\Data\\Dtos",
+    "\\Repositories",
+    "\\Repositories\\MealRepository",
+    "\\Services",
+    "\\Services\\EmailService",
+    "\\Services\\HtmlGenerator",
+    "\\Services\\MealService"
+  ],
+  "SelectedNode": "\\diplomski.csproj",
+  "PreviewInSolutionExplorer": false
+}

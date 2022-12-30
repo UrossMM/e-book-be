@@ -2384,19 +2384,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\uros\\.nuget\\packages\\": {}
+    "C:\\Users\\ncoded\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\uros\\source\\repos\\fullapp\\nutrition\\diplomski\\diplomski\\diplomski.csproj",
+      "projectUniqueName": "C:\\Users\\ncoded\\Desktop\\workspace - dotnet\\e-book-be\\diplomski\\diplomski.csproj",
       "projectName": "diplomski",
-      "projectPath": "C:\\Users\\uros\\source\\repos\\fullapp\\nutrition\\diplomski\\diplomski\\diplomski.csproj",
-      "packagesPath": "C:\\Users\\uros\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\uros\\source\\repos\\fullapp\\nutrition\\diplomski\\diplomski\\obj\\",
+      "projectPath": "C:\\Users\\ncoded\\Desktop\\workspace - dotnet\\e-book-be\\diplomski\\diplomski.csproj",
+      "packagesPath": "C:\\Users\\ncoded\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ncoded\\Desktop\\workspace - dotnet\\e-book-be\\diplomski\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\uros\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ncoded\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -2479,7 +2479,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.101\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.307\\RuntimeIdentifierGraph.json"
       }
     }
   },

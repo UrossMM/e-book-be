@@ -142,7 +142,7 @@ namespace diplomski.Repositories.MealRepository
         //        return new StatusDto(StatusCodes.Status500InternalServerError, "Server error");
         //    }
         //}
-        private void FindInedibleIngredients(List<MealDto> meals, List<string> additions)
+        private async Task<List<MealDto>> FindInedibleIngredients(List<MealDto> meals, List<string> additions, Goal goal)
         {
             foreach (MealDto meal in meals)
             {
@@ -150,6 +150,22 @@ namespace diplomski.Repositories.MealRepository
 
                 List<string> InedibleIngredients = mealAdditions.Intersect(additions)
                     .ToList();
+
+                if(InedibleIngredients.Count > 0)
+                {
+                    MealAutoFilter filter = new MealAutoFilter();
+                    filter.Additions = additions;
+                    filter.Calories = meal.Calories.GetValueOrDefault();
+                    filter.Goal = goal; 
+
+                    var replacementMeal = await GetFilteredMealAutomatic(filter);
+                    if(replacementMeal != null)
+                    {
+                        mealAdditions = replacementMeal.Ingredient.Split(',').ToList();
+                        InedibleIngredients = mealAdditions.Intersect(additions).ToList();
+                    }
+                }
+
                 foreach (string inedibleIngredient in InedibleIngredients)
                 {
                     EatIngredient forCreate = new EatIngredient()
@@ -170,6 +186,8 @@ namespace diplomski.Repositories.MealRepository
                     meal.EatIngredients.Add(forCreate);
                 }
             }
+
+            return meals;
         }
         public async Task<(StatusDto, List<MealDto>)> GetPersonalizedMealsAsync(UserInputDataDto data)
         {
@@ -261,7 +279,7 @@ namespace diplomski.Repositories.MealRepository
                 })
                 .ToListAsync();
 
-                FindInedibleIngredients(result, data.Additions.Split(',').ToList());
+                result = await FindInedibleIngredients(result, data.Additions.Split(',').ToList(), data.Goal);
 
                 return (new StatusDto(), result);
             }
@@ -482,6 +500,58 @@ namespace diplomski.Repositories.MealRepository
                 result = meals;
 
             return (new StatusDto(), result);
+        }
+
+        private async Task<MealDto> GetFilteredMealAutomatic(MealAutoFilter mealFilter)
+        {
+            MealDto? meal = null;
+            List<Meal> filteredMealsByGoal = new List<Meal>();
+            IQueryable<Meal> querymeals = _dbContext.Meals;
+
+            if (mealFilter.Goal == Goal.Fattening)
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories >= mealFilter.Calories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+            
+            else if (mealFilter.Goal == Goal.WeightLoss)
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories <= mealFilter.Calories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+                
+            else {
+                var minCalories = mealFilter.Calories - mealFilter.Calories * 0.2;
+                var maxCalories = mealFilter.Calories + mealFilter.Calories * 0.2;
+                filteredMealsByGoal = await querymeals.Where(x => x.Calories >= minCalories && x.Calories <= maxCalories)
+                    .OrderByDescending(x => x.Calories)
+                    .ToListAsync();
+            }
+
+            foreach(Meal filteredMealByGoal in filteredMealsByGoal)
+            {
+                List<string> mealIngredients = filteredMealByGoal.Ingredient.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+                bool containsAdditionsFromFilter = mealIngredients.Any(x => mealFilter.Additions.Contains(x));
+
+                if (containsAdditionsFromFilter)
+                    continue;
+                else
+                {
+                    meal = new MealDto()
+                    {
+                        Calories = filteredMealByGoal.Calories,
+                        Mass = filteredMealByGoal.Mass,
+                        Name = filteredMealByGoal.Name,
+                        Recipe = filteredMealByGoal.Recipe,
+                        Ingredient = filteredMealByGoal.Ingredient,
+                        Carbohydrates = filteredMealByGoal.Carbohydrates,
+                        Proteins = filteredMealByGoal.Proteins,
+                        Fats = filteredMealByGoal.Fats
+                    };
+
+                    return meal;
+                }
+            }
+
+            return meal;
         }
 
         public async Task<StatusDto> AddFoodstuff(FoodstuffDto foodstuffDto)
